@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0d2b4e">
+<title>SITOC - Registro Fotográfico y Checklist</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --navy:#0d2b4e;--navy2:#1a3f6f;--cyan:#29b6d8;--cyan2:#1a9dbf;
+  --white:#fff;--gray:#f4f6f9;--gray2:#e8ecf1;--gray3:#c8d0dc;
+  --text:#1a2535;--text2:#4a5568;--danger:#e53e3e;--success:#38a169;--warn:#d97706;
+  --radius:12px;--shadow:0 2px 12px rgba(13,43,78,.13);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--gray);color:var(--text);min-height:100vh;padding-bottom:90px}
+.header{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);padding:14px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.header-info{flex:1}
+.header h1{color:var(--white);font-size:13px;font-weight:700;line-height:1.2;text-transform:uppercase}
+.header p{color:rgba(255,255,255,.7);font-size:10px;margin-top:2px}
+.screen{display:none;padding:14px;max-width:600px;margin:0 auto}
+.screen.active{display:block}
+.card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
+.card-title{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.04em}
+.card-title .icon{width:26px;height:26px;background:var(--navy);border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--white);font-size:13px;flex-shrink:0}
+.field-label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;margin-top:10px}
+input[type=text],input[type=date],input[type=time],select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--gray3);border-radius:8px;font-size:14px;color:var(--text);background:var(--white);outline:none;transition:border .2s;-webkit-appearance:none;appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--cyan)}
+textarea{resize:vertical;min-height:60px}
+.tech-card {background: #f9fbfb; border: 1px solid var(--gray2); padding: 15px; border-radius: 8px; margin-bottom: 12px; position: relative;}
+.btn-remove {position: absolute; top: 10px; right: 10px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-weight: bold; text-align: center; line-height: 22px; padding: 0;}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--gray2);display:flex;z-index:200;box-shadow:0 -2px 12px rgba(0,0,0,.08)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px 10px;border:none;background:none;cursor:pointer;color:var(--text2);font-size:10px;font-weight:600;gap:3px;transition:color .15s;position:relative}
+.nav-icon{font-size:22px;line-height:1}
+.nav-btn.active{color:var(--cyan)}
+.nav-bar{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:28px;height:3px;background:var(--cyan);border-radius:2px;display:none}
+.nav-btn.active .nav-bar {display: block;}
+.btn{display:block;width:100%;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s;margin-top:10px}
+.btn-primary{background:linear-gradient(135deg,var(--cyan) 0%,var(--cyan2) 100%);color:var(--white);box-shadow:0 3px 10px rgba(41,182,216,.3)}
+.btn-primary:active{transform:scale(.98)}
+.btn-danger{background:var(--danger);color:var(--white)}
+.btn-outline{background:transparent;border:1.5px solid var(--navy);color:var(--navy);font-weight:700;padding:6px;font-size:12px;margin-top:6px}
+.record-item{background:var(--white);border-radius:10px;padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;cursor:pointer;-webkit-user-select:none;user-select:none}
+.record-item:active{opacity:.8}
+.record-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;background:var(--success)}
+.record-info{flex:1}
+.record-name{font-size:13px;font-weight:700;color:var(--text)}
+.record-date{font-size:11px;color:var(--text2);margin-top:2px}
+.empty-state{text-align:center;padding:48px 20px;color:var(--text2)}
+.empty-icon{font-size:52px;margin-bottom:12px}
+.toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%) translateY(16px);background:rgba(26,37,53,.95);color:var(--white);padding:11px 22px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:999;pointer-events:none;white-space:nowrap;max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.footer {text-align: center; font-size: 12px; color: var(--text2); margin-top: 30px; border-top: 1px solid var(--gray2); padding-top: 15px;}
+.detail-hdr{background:linear-gradient(135deg,var(--navy),var(--navy2));color:var(--white);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.info-row{display:flex;flex-direction:column;gap:4px;padding:10px 0;border-bottom:1px solid var(--gray2);font-size:13px}
+.info-row span{font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.btn-secondary {background-color: var(--gray2); color: var(--navy2); padding: 8px 12px; border: 1.5px solid var(--gray3); border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 700; margin-top: 5px; width: 100%;}
+.btn-secondary:hover {background-color: var(--gray3);}
+
+/* ESTILOS DE FOTOS E IMÁGENES */
+.photo-container{margin-top:12px}
+.btn-upload-photo{display:block;width:100%;background:var(--cyan);color:var(--white);border:none;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;margin-top:8px}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(80px, 1fr));gap:8px;margin-top:8px}
+.photo-thumb-wrap{position:relative;width:100%;aspect-ratio:1;border-radius:6px;overflow:hidden;border:1px solid var(--gray3);background:var(--gray2)}
+.photo-thumb-wrap img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
+.photo-delete-btn{position:absolute;top:2px;right:2px;background:rgba(229,62,62,0.9);color:white;border:none;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.3);z-index:10}
+
+/* LIGHTBOX MODAL */
+.lightbox-overlay {display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(13, 37, 63, 0.95); z-index: 9999; justify-content: center; align-items: center; touch-action: none;}
+.lightbox-img {max-width: 95%; max-height: 85%; object-fit: contain; border-radius: 6px; box-shadow: 0 4px 25px rgba(0,0,0,0.6);}
+.lightbox-close {position: absolute; top: 24px; right: 24px; background: rgba(255,255,255,0.25); color: #fff; border: none; width: 42px; height: 42px; border-radius: 50%; font-size: 22px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;}
+
+/* ─── ESTILOS DE IMPRESIÓN PARA PDF ─── */
+@media print {
+  body {background: white !important; color: #000; padding-bottom: 0;}
+  .header, .bottom-nav, .btn, .btn-outline, .btn-secondary, .nav-btn, .footer, .btn-upload-photo, .photo-delete-btn {display: none !important;}
+  .screen {display: none !important;}
+  #screen-detalle {display: block !important; padding: 0; max-width: 100%; margin: 0;}
+  .card {box-shadow: none !important; border: 1px solid var(--gray3) !important; page-break-inside: avoid; margin-bottom: 15px;}
+  .photo-thumb-wrap {border: 1px solid #000 !important;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-info">
+    <h1>SITOC - REGISTRO DE CAMPO</h1>
+    <p>Plataforma de Inspección y Registro Fotográfico</p>
+  </div>
+</div>
+
+<div id="screen-form" class="screen active">
+  <form id="formRegistro">
+    
+    <div class="card">
+      <div class="card-title"><div class="icon">👷</div>Datos del Personal y Ubicación</div>
+      
+      <label class="field-label">Fecha:</label>
+      <input type="date" id="tec-fecha" required>
+
+      <label class="field-label">Nombre del Técnico / Líder:</label>
+      <input type="text" id="tec-nombre" placeholder="Nombres y apellidos completos" required>
+
+      <label class="field-label">Cédula (C.C.):</label>
+      <input type="text" id="tec-cedula" placeholder="Número de documento" required>
+
+      <label class="field-label">Número de Teléfono:</label>
+      <input type="text" id="tec-telefono" placeholder="Móvil de contacto" required>
+
+      <label class="field-label">Estación de Trabajo:</label>
+      <input type="text" id="estacion-trabajo" placeholder="Ej. Estación Central / Nodo" required>
+
+      <label class="field-label">Coordenadas de Trabajo (Lat, Lon):</label>
+      <div style="display: flex; gap: 6px;">
+        <input type="text" id="coordenadas" placeholder="Ej. 11.019,-74.851" required style="flex:1;">
+        <button type="button" class="btn btn-secondary" style="margin-top:0; width:auto; padding:10px 14px;" onclick="obtenerCoordenadasGPS()">📍 Usar GPS</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><div class="icon">📁</div>Bloques / Agrupación de Trabajos</div>
+      <div id="bloquesContainer"></div>
+      <button type="button" class="btn-secondary" onclick="agregarBloque()">+ Crear Nuevo Bloque</button>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Enviar Registros a n8n</button>
+    
+    <div class="footer">
+      SITOC | Infraestructura de Operaciones
+    </div>
+  </form>
+</div>
+
+<div id="screen-historial" class="screen">
+  <div class="detail-hdr"><h2>📂 REGISTROS GUARDADOS</h2><p>Historial de reportes</p></div>
+  <div id="historial-lista" style="margin-top: 15px;">No hay reportes registrados.</div>
+  <button class="btn btn-danger" style="margin-top: 20px;" id="btn-borrar-todo" onclick="limpiarHistorial()">🗑️ Limpiar Historial</button>
+</div>
+
+<div id="screen-detalle" class="screen">
+  <button class="btn btn-outline" style="margin-bottom: 12px; padding: 8px;" onclick="showScreen('historial')">← Volver a Registros</button>
+  <div id="detalleContenido"></div>
+  <button class="btn btn-danger" id="btn-eliminar-reg" style="margin-top: 15px;">Eliminar Registro</button>
+</div>
+
+<div id="lightbox" class="lightbox-overlay" onclick="cerrarLightbox()">
+  <button class="lightbox-close" onclick="cerrarLightbox()">✕</button>
+  <img id="lightboxImg" class="lightbox-img" src="" alt="Vista ampliada" onclick="event.stopPropagation()">
+</div>
+
+<div class="bottom-nav">
+  <button class="nav-btn active" id="nav-form" onclick="showScreen('form')">
+    <span class="nav-icon">📝</span>
+    <span>Formulario</span>
+    <div class="nav-bar" style="display: block;"></div>
+  </button>
+  <button class="nav-btn" id="nav-historial" onclick="showScreen('historial')">
+    <span class="nav-icon">📁</span>
+    <span>Registros</span>
+    <div class="nav-bar"></div>
+  </button>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+let bloqueCounter = 0;
+let itemCounters = {}; 
+let fotosPorItem = {}; 
+
+window.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('tec-fecha').value = new Date().toISOString().split('T')[0];
+  cargarBloqueAntenasPredeterminado();
+});
+
+function cargarBloqueAntenasPredeterminado() {
+    agregarBloque();
+    
+    const idBloqueCreado = bloqueCounter;
+    const inputTitulo = document.querySelector(`#bloqueCard_${idBloqueCreado} .bloque-titulo`);
+    if (inputTitulo) {
+        inputTitulo.value = "1 INSTALACION DE ANTENAS";
+        
+        const itemsAntena = [
+            "Foto linea de vista de la antena",
+            "Foto panoramica de la antena lado derecho",
+            "Foto panoramica de la antena lado izquierdo",
+            "Foto panoramica de la antena lado superior",
+            "Foto panorámica de la antena lado inferior",
+            "Foto panorámica del herraje de la antena",
+            "Foto de la marquilla acrílica de la antena",
+            "Foto de la marquilla acrílica tierras odus",
+            "Foto de la marquilla acrílica cables IF",
+            "Foto de los encintados RX - TX conexión ODUS",
+            "Foto de la conexión y termoencogible cable de tierra"
+        ];
+        
+        // 🌟 CORRECCIÓN: Llamamos a agregarItem primero para que el elemento exista en el DOM
+        agregarItem(idBloqueCreado);
+        const primerItemInput = document.querySelector(`#itemsWrapper_${idBloqueCreado} .item-nombre`);
+        if (primerItemInput) {
+            primerItemInput.value = itemsAntena[0];
+        }
+        
+        // 🌟 CORRECCIÓN: El ciclo ahora empieza desde 1 (el segundo ítem), ya que el 0 se creó arriba
+        for (let j = 1; j < itemsAntena.length; j++) {
+            agregarItem(idBloqueCreado);
+            const inputsChecklist = document.querySelectorAll(`#itemsWrapper_${idBloqueCreado} .item-nombre`);
+            if (inputsChecklist.length > 0) {
+                inputsChecklist[inputsChecklist.length - 1].value = itemsAntena[j];
+            }
+        }
+    }
+}
+
+function obtenerCoordenadasGPS() {
+    if (navigator.geolocation) {
+        showToast('📍 Buscando ubicación...');
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            document.getElementById('coordenadas').value = lat + ',' + lon;
+            showToast('✅ Ubicación GPS capturada');
+        }, function(error) {
+            alert('⚠️ No se pudo acceder a la ubicación. Verifica los permisos de GPS.');
+        }, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
+    } else {
+        alert('❌ Tu dispositivo no soporta geolocalización.');
+    }
+}
+
+function estamparMarcaAgua(base64Original, sitio, fecha, hora, coordenadas, callback) {
+    const img = new Image();
+    img.src = base64Original;
+    
+    img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        
+        ctx.drawImage(img, 0, 0);
+        
+        const tamanoFuente = Math.max(canvas.width, canvas.height) * 0.03;
+        ctx.font = `bold ${tamanoFuente}px Arial`;
+        ctx.fillStyle = "#ffffff";
+        ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+        ctx.shadowBlur = 6;
+        
+        const texto1 = `SITIO/ESTACIÓN: ${sitio}`;
+        const texto2 = `FECHA: ${fecha} - HORA: ${hora}`;
+        const texto3 = `COORDENADAS: ${coordenadas}`;
+        
+        const margenLateral = canvas.width * 0.02;
+        const espacioLinea = tamanoFuente * 1.2;
+        let posInicialY = canvas.height - (espacioLinea * 3.5);
+        
+        ctx.fillText(texto1, margenLateral, posInicialY);
+        posInicialY += espacioLinea;
+        ctx.fillText(texto2, margenLateral, posInicialY);
+        posInicialY += espacioLinea;
+        ctx.fillText(texto3, margenLateral, posInicialY);
+        
+        const base64Marcado = canvas.toDataURL('image/jpeg', 0.92);
+        callback(base64Marcado);
+    };
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  document.querySelectorAll('.nav-btn').forEach(function(b) {
+    b.classList.remove('active');
+    var bar = b.querySelector('.nav-bar');
+    if (bar) bar.style.display = 'none';
+  });
+
+  document.getElementById('screen-' + name).classList.add('active');
+  var navBtn = document.getElementById('nav-' + name);
+  if (navBtn) {
+    navBtn.classList.add('active');
+    var bar = navBtn.querySelector('.nav-bar');
+    if (bar) bar.style.display = 'block';
+  }
+
+  window.scrollTo(0, 0);
+  if (name === 'historial') renderHistorial();
+}
+
+function getRegs() {
+  return JSON.parse(localStorage.getItem('registrosCampo') || '[]');
+}
+
+function renderHistorial() {
+  var list = document.getElementById('historial-lista');
+  var regs = getRegs();
+  var btnBorrar = document.getElementById('btn-borrar-todo');
+
+  if (regs.length === 0) {
+    btnBorrar.style.display = 'none';
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📁</div>
+        <p>No se registran reportes guardados</p>
+      </div>`;
+    return;
+  }
+
+  btnBorrar.style.display = 'block';
+  var html = '';
+  regs.forEach(function(r) {
+    html += '<div class="record-item" onclick="verDetalle(\'' + r.id + '\')">';
+    html += '  <div class="record-dot"></div>';
+    html += '  <div class="record-info">';
+    html += '    <div class="record-name">Técnico: ' + r.tecnico.nombre + ' | Estación: ' + r.tecnico.estacion + '</div>';
+    html += '    <div class="record-date">Bloques creados: ' + r.bloques.length + '</div>';
+    html += '  </div>';
+    html += '  <span style="font-size:12px; color:var(--text2); background:var(--gray3); padding:6px 10px; border-radius:6px; font-weight:bold;" onclick="verDetalle(\'' + r.id + '\'); event.stopPropagation();">👁️ Ver</span>';
+    html += '</div>';
+  });
+  list.innerHTML = html;
+}
+
+function agregarBloque() {
+    bloqueCounter++;
+    const container = document.getElementById('bloquesContainer');
+    
+    const card = document.createElement('div');
+    card.className = 'tech-card';
+    card.id = `bloqueCard_${bloqueCounter}`;
+    
+    card.innerHTML = `
+        ${bloqueCounter > 1 ? `<button type="button" class="btn-remove" onclick="removerBloque(${bloqueCounter})">&times;</button>` : ''}
+        <h4>Nombre del Bloque</h4>
+        <input type="text" class="bloque-titulo" placeholder="Ej. Bloque de Instalación o Torre" required style="margin-top:6px; margin-bottom:10px;">
+        
+        <h5>Ítems / Foto Antena /ODU / RAU</h5>
+        <div id="itemsWrapper_${bloqueCounter}" style="padding-left: 10px; border-left: 3px solid var(--gray3); margin-top:6px; margin-bottom: 8px;"></div>
+        <button type="button" class="btn-secondary" style="margin-bottom:12px;" onclick="agregarItem(${bloqueCounter})">+ Añadir Ítem al Bloque</button>
+    `;
+    
+    container.appendChild(card);
+}
+
+function removerBloque(id) {
+    var card = document.getElementById(`bloqueCard_${id}`);
+    if (card) card.remove();
+}
+
+function agregarItem(bloqueId) {
+    if (!itemCounters[bloqueId]) itemCounters[bloqueId] = 0;
+    itemCounters[bloqueId]++;
+    
+    const itemUid = `item_${bloqueId}_${itemCounters[bloqueId]}`;
+    fotosPorItem[itemUid] = [];
+    
+    const container = document.getElementById(`itemsWrapper_${bloqueId}`);
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'tech-card';
+    itemDiv.id = `itemCard_${itemUid}`;
+    itemDiv.style.marginBottom = "8px";
+    itemDiv.style.backgroundColor = "#fff";
+    
+    itemDiv.innerHTML = `
+        ${itemCounters[bloqueId] > 1 ? `<button type="button" class="btn-remove" onclick="removerItem('${itemUid}')">&times;</button>` : ''}
+        <label class="field-label">Nombre/Detalle del Ítem:</label>
+        <input type="text" class="item-nombre" placeholder="Ej. Foto de antena, cableado, etc." required style="margin-bottom:6px;">
+        
+        <div class="photo-container">
+            <label class="field-label">Registros Fotográficos:</label>
+            <input type="file" accept="image/*" capture="environment" class="input-foto-file" style="display:none;" onchange="procesarFotoAdjunta(this, '${itemUid}')">
+            <button type="button" class="btn-upload-photo" onclick="this.previousElementSibling.click()">📷 Tomar / Adjuntar Foto</button>
+            <div class="photo-grid" id="gridPhotos_${itemUid}"></div>
+        </div>
+        
+        <label class="field-label" style="margin-top:12px;">Comentarios / Observaciones:</label>
+        <textarea class="item-comentario" rows="1" placeholder="Detalles adicionales..."></textarea>
+    `;
+    container.appendChild(itemDiv);
+}
+
+function procesarFotoAdjunta(input, itemUid) {
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var base64Original = e.target.result;
+            
+            var sitio = document.getElementById('estacion-trabajo').value || 'SITOC';
+            var fecha = document.getElementById('tec-fecha').value;
+            var hora = new Date().toLocaleTimeString();
+            var coordenadas = document.getElementById('coordenadas').value || '0.0,0.0';
+
+            estamparMarcaAgua(base64Original, sitio, fecha, hora, coordenadas, function(base64Marcado) {
+                fotosPorItem[itemUid].push(base64Marcado);
+                renderGrillaFotos(itemUid);
+            });
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+    input.value = "";
+}
+
+function renderGrillaFotos(itemUid) {
+    var gridCont = document.getElementById(`gridPhotos_${itemUid}`);
+    var html = '';
+    
+    fotosPorItem[itemUid].forEach(function(imgData, idx) {
+        html += '<div class="photo-thumb-wrap">';
+        html += ' <button type="button" class="photo-delete-btn" onclick="eliminarFoto(\'' + itemUid + '\',' + idx + ')">✕</button>';
+        html += ' <img src="' + imgData + '" alt="Foto de campo" onclick="abrirLightbox(\'' + imgData + '\')">';
+        html += '</div>';
+    });
+    
+    gridCont.innerHTML = html;
+}
+
+function eliminarFoto(itemUid, index) {
+    if (confirm('¿Desea descartar/repetir esta fotografía?')) {
+        fotosPorItem[itemUid].splice(index, 1);
+        renderGrillaFotos(itemUid);
+    }
+}
+
+function abrirLightbox(imgSrc) {
+    document.getElementById('lightboxImg').src = imgSrc;
+    document.getElementById('lightbox').style.display = 'flex';
+}
+
+function cerrarLightbox() {
+    document.getElementById('lightbox').style.display = 'none';
+}
+
+function removerItem(uid) {
+    var card = document.getElementById(`itemCard_${uid}`);
+    if (card) {
+        delete fotosPorItem[uid];
+        card.remove();
+    }
+}
+
+function verDetalle(id) {
+  var r = getRegs().find(function(reg) { return reg.id === id; });
+  if (!r) return;
+
+  var html = '';
+  html += '<div class="detail-hdr"><h2>REPORTE DE CAMPO</h2><p>Estación: ' + r.tecnico.estacion + ' | Fecha: ' + r.fecha + '</p></div>';
+  
+  html += '<div class="card"><div class="card-title"><div class="icon">👷</div>Datos del Personal</div>' +
+          '<div class="info-row"><span>Fecha del reporte:</span><strong>' + r.fecha + '</strong></div>' +
+          '<div class="info-row"><span>Nombre:</span><strong>' + r.tecnico.nombre + '</strong></div>' +
+          '<div class="info-row"><span>Cédula:</span><strong>' + r.tecnico.cedula + '</strong></div>' +
+          '<div class="info-row"><span>Teléfono:</span><strong>' + r.tecnico.telefono + '</strong></div>' +
+          '<div class="info-row"><span>Estación:</span><strong>' + r.tecnico.estacion + '</strong></div>' +
+          '<div class="info-row"><span>Coordenadas:</span><strong>' + r.tecnico.coordenadas + '</strong></div>' +
+          '</div>';
+
+  r.bloques.forEach(function(b) {
+      html += '<div class="card"><div class="card-title"><div class="icon">📁</div>Bloque: ' + b.titulo + '</div>';
+      b.items.forEach(function(it, i) {
+          html += '<div style="background:var(--gray2); padding:10px; border-radius:6px; margin-bottom:8px; font-size:12px;">' +
+          '<p><strong>Ítem #' + (i+1) + ':</strong> ' + it.nombre + '</p>' +
+          '<p>Comentarios: ' + (it.comentario || 'Sin comentarios') + '</p>';
+          
+          if(it.fotos && it.fotos.length > 0) {
+              html += '<p style="margin-top:6px;">Registros fotográficos validados:</p>';
+              html += '<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;">';
+              it.fotos.forEach(function(fBase64) {
+                  html += '<img src="' + fBase64 + '" style="max-height:90px; border-radius:6px; border:1px solid #ccc; object-fit:contain;"/>';
+              });
+              html += '</div>';
+          }
+          html += '</div>';
+      });
+      html += '</div>';
+  });
+
+  document.getElementById('detalleContenido').innerHTML = html;
+  document.getElementById('btn-eliminar-reg').onclick = function() { eliminarReg(r.id); };
+  showScreen('detalle');
+}
+
+function eliminarReg(id) {
+  if (!confirm('¿Seguro que desea eliminar este registro?')) return;
+  var regs = getRegs().filter(function(r) { return r.id !== id; });
+  localStorage.setItem('registrosCampo', JSON.stringify(regs));
+  showScreen('historial');
+  showToast('🗑️ Registro eliminado');
+}
+
+function limpiarHistorial() {
+  if (!confirm('🚨 ¿Vaciar historial permanentemente?')) return;
+  localStorage.removeItem('registrosCampo');
+  renderHistorial();
+  showToast('🗑️ Registros borrados');
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.innerText = msg;
+  t.className = 'toast show';
+  setTimeout(function() { t.className = 'toast'; }, 2500);
+}
+
+document.getElementById('formRegistro').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    let bloquesArray = [];
+    
+    document.querySelectorAll('[id^="bloqueCard_"]').forEach((bCard) => {
+        const tituloBloque = bCard.querySelector('.bloque-titulo').value;
+        let itemsArray = [];
+        
+        bCard.querySelectorAll('[id^="itemCard_"]').forEach((iCard) => {
+            const itemUid = iCard.id.replace('itemCard_', '');
+            const nombreItem = iCard.querySelector('.item-nombre').value;
+            const comentarioItem = iCard.querySelector('.item-comentario').value;
+            
+            itemsArray.push({
+                nombre: nombreItem,
+                comentario: comentarioItem,
+                fotos: fotosPorItem[itemUid] || []
+            });
+        });
+
+        bloquesArray.push({
+            titulo: tituloBloque,
+            items: itemsArray
+        });
+    });
+
+    const datosFinales = {
+        id: Date.now().toString(),
+        fecha: document.getElementById('tec-fecha').value,
+        tecnico: {
+            nombre: document.getElementById('tec-nombre').value,
+            cedula: document.getElementById('tec-cedula').value,
+            telefono: document.getElementById('tec-telefono').value,
+            estacion: document.getElementById('estacion-trabajo').value,
+            coordenadas: document.getElementById('coordenadas').value
+        },
+        bloques: bloquesArray
+    };
+
+    let historialLocal = getRegs();
+    historialLocal.unshift(datosFinales);
+    localStorage.setItem('registrosCampo', JSON.stringify(historialLocal));
+
+    const URL_N8N = 'https://sitocsas.app.n8n.cloud/webhook/f3029729-fe7b-497e-a08a-c3c5ae1e6e8e';
+    fetch(URL_N8N, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datosFinales)
+    })
+    .then(function(response) {
+        console.log('Enviado a n8n', response);
+        showToast('✅ Reporte guardado localmente y enviado a n8n.');
+    })
+    .catch(function(err) {
+        console.error('Error al enviar a n8n:', err);
+        showToast('⚠️ Guardado localmente. Error al enviar a n8n.');
+    });
+
+    this.reset();
+    
+    fotosPorItem = {};
+    document.getElementById('bloquesContainer').innerHTML = '';
+    bloqueCounter = 0;
+    itemCounters = {};
+    
+    cargarBloqueAntenasPredeterminado();
+    showScreen('historial');
+});
+</script>
+
+</body>
+</html>
